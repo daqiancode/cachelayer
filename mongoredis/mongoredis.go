@@ -53,6 +53,10 @@ func (s *Mongo[T, I]) Close() error {
 	return s.db.Disconnect(s.ctx)
 }
 
+func (s *Mongo[T, I]) DB() *mongo.Client {
+	return s.db
+}
+
 func (s *Mongo[T, I]) Create(t *T) error {
 	if cachelayer.IsNullID((*t).GetID()) {
 		reflect.ValueOf(t).Elem().FieldByName(s.idField).SetString(primitive.NewObjectID().Hex())

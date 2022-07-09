@@ -24,6 +24,9 @@ type Gorm[T cachelayer.Table[I], I cachelayer.IDType] struct {
 func (s *Gorm[T, I]) Close() error {
 	return nil
 }
+func (s *Gorm[T, I]) DB() *gorm.DB {
+	return s.DB()
+}
 func (s *Gorm[T, I]) Create(r *T) error {
 	if err := s.db.Create(r).Error; err != nil {
 		return err
