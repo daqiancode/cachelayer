@@ -127,3 +127,21 @@ func (s *FullRedisCache[T, I]) Delete(ids ...I) (int64, error) {
 	s.load()
 	return rowsAffected, err
 }
+
+func (s *FullRedisCache[T, I]) ListAll() ([]T, error) {
+	key := s.CacheKey()
+	count, err := s.red.Exists(s.ctx, key).Result()
+	if err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		if err := s.load(); err != nil {
+			return nil, err
+		}
+	}
+	return s.red.HGetAllJson(key)
+}
+
+func (s *FullRedisCache[T, I]) ClearCache(objs ...T) error {
+	return s.red.Del(s.ctx, s.CacheKey()).Err()
+}

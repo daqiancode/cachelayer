@@ -105,8 +105,30 @@ type Table[I IDType] interface {
 // 2.2 Index cache: eg2. {table}/uid/{uid}/type/{type} ->  [id1]
 // 3. Index cache clear cache process, on index change 1. given indexes, 2. find related index cache keys,3. delete
 type Cache[T Table[I], I IDType] interface {
-	// SetSerializer(serializer Serializer)
-	// GetSerializer() Serializer
+	//clear cache for objs
+	ClearCache(objs ...T) error
+	//Creat create new record into dababase
+	Create(obj *T) error
+	//Save update if id exists or create new record
+	Save(obj *T) error
+	//Delete return (effectedrows,error)
+	Delete(ids ...I) (int64, error)
+	// values can be struct or map[string]interface{}, return (effectedrows,error)
+	Update(id I, values interface{}) (int64, error)
+
+	//get obj by id
+	Get(id I) (T, bool, error)
+	//list objs by ids
+	List(ids ...I) ([]T, error)
+	//get obj by index
+	GetBy(index Index) (T, bool, error)
+	//list objs by indexes
+	ListBy(index Index, orderBys OrderBys) ([]T, error)
+
+	//close lower clients
+	Close() error
+
+	//for extending
 	SetCtx(ctx context.Context)
 	GetCtx() context.Context
 	SetCacheKeyPrefix(prefix string)
@@ -116,28 +138,39 @@ type Cache[T Table[I], I IDType] interface {
 	GetTableName() string
 	SetIdField(idField string)
 	GetIdField() string
-	// SetTTL(ttl time.Duration)
-	// GetTTL() time.Duration
+}
 
-	// AddIndexFields(index []string)
-	// ListIndexFields(index []string)
-	//clean cache by id and indexes
-	Close() error
-	ClearCache(id I, indexes Indexes) error
+type FullCache[T Table[I], I IDType] interface {
+	ClearCache(objs ...T) error
 	//Creat create new record into dababase
 	Create(obj *T) error
 	//Save update if id exists or create new record
 	Save(obj *T) error
 	//Delete return (effectedrows,error)
 	Delete(ids ...I) (int64, error)
-
 	// values can be struct or map[string]interface{}, return (effectedrows,error)
 	Update(id I, values interface{}) (int64, error)
 
+	//get obj by id
 	Get(id I) (T, bool, error)
+	//list objs by ids
 	List(ids ...I) ([]T, error)
-	GetBy(index Index) (T, bool, error)
-	ListBy(index Index, orderBys OrderBys) ([]T, error)
+	//list all objs from db
+	ListAll() ([]T, error)
+
+	//close lower clients
+	Close() error
+
+	//for extending
+	SetCtx(ctx context.Context)
+	GetCtx() context.Context
+	SetCacheKeyPrefix(prefix string)
+	GetCacheKeyPrefix() string
+	MakeCacheKey(index Index) string
+	SetTableName(table string)
+	GetTableName() string
+	SetIdField(idField string)
+	GetIdField() string
 }
 
 type CacheBase[T Table[I], I IDType] struct {

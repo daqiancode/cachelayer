@@ -12,7 +12,7 @@ func NewGormRedis[T cachelayer.Table[I], I cachelayer.IDType](prefix, table, idF
 	rc := cachelayer.NewRedisCache[T, I](prefix, table, idField, &Gorm[T, I]{db: db}, red, ttl)
 	return rc
 }
-func NewGormRedisFull[T cachelayer.Table[I], I cachelayer.IDType](prefix, table, idField string, db *gorm.DB, red *redis.Client, ttl time.Duration) *cachelayer.FullRedisCache[T, I] {
+func NewGormRedisFull[T cachelayer.Table[I], I cachelayer.IDType](prefix, table, idField string, db *gorm.DB, red *redis.Client, ttl time.Duration) cachelayer.FullCache[T, I] {
 	rc := cachelayer.NewFullRedisCache[T, I](prefix, table, idField, &Gorm[T, I]{db: db}, red, ttl)
 	return rc
 }

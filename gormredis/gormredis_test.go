@@ -57,7 +57,7 @@ func createCache() cachelayer.Cache[Commodity, string] {
 	return gormredis.NewGormRedis[Commodity, string]("app", "commodity", "Id", GetDBClient(), getRedisClient(), 10*time.Second)
 
 }
-func createCacheFull() *cachelayer.FullRedisCache[Commodity, string] {
+func createCacheFull() cachelayer.FullCache[Commodity, string] {
 	return gormredis.NewGormRedisFull[Commodity, string]("app", "commodity", "Id", GetDBClient(), getRedisClient(), 10*time.Second)
 
 }
@@ -89,11 +89,6 @@ func TestGormRedisMain(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(r4))
 	assert.Equal(t, id, r4[0].Id)
-
-	fmt.Println("r5 start")
-	r5, err := ca.List("1", "100")
-	fmt.Println("r5", r5)
-	assert.Nil(t, err)
 }
 
 func TestCacheFull(t *testing.T) {

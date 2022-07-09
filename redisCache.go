@@ -47,24 +47,40 @@ func (s *RedisCache[T, I]) GetDB() DBCRUD[T, I] {
 func (s *RedisCache[T, I]) Close() error {
 	return s.db.Close()
 }
-
-func (s *RedisCache[T, I]) ClearCache(id I, indexes Indexes) error {
-	var keys []string
-	if !IsNullID(id) {
-		keys = append(keys, s.MakeCacheKey(NewIndex(s.GetIdField(), id)))
+func (s *RedisCache[T, I]) ClearCache(objs ...T) error {
+	if len(objs) == 0 {
+		return nil
 	}
-	for _, v := range indexes {
-		keys = append(keys, s.MakeCacheKey(v))
+	var keys []string
+	for _, v := range objs {
+		keys = append(keys, s.MakeCacheKey(NewIndex(s.GetIdField(), v.GetID())))
+		for _, u := range v.ListIndexes() {
+			keys = append(keys, s.MakeCacheKey(u))
+		}
 	}
 	keys = UniqueStrings(keys)
 	return s.red.Del(s.ctx, keys...).Err()
+
 }
+
+// func (s *RedisCache[T, I]) ClearCacheRaw(id I, indexes Indexes) error {
+// 	var keys []string
+// 	if !IsNullID(id) {
+// 		keys = append(keys, s.MakeCacheKey(NewIndex(s.GetIdField(), id)))
+// 	}
+// 	for _, v := range indexes {
+// 		keys = append(keys, s.MakeCacheKey(v))
+// 	}
+// 	keys = UniqueStrings(keys)
+// 	return s.red.Del(s.ctx, keys...).Err()
+// }
 
 func (s *RedisCache[T, I]) Create(obj *T) error {
 	if err := s.db.Create(obj); err != nil {
 		return err
 	}
-	s.ClearCache((*obj).GetID(), (*obj).ListIndexes())
+	s.ClearCache(*obj)
+	// s.ClearCache((*obj).GetID(), (*obj).ListIndexes())
 	return nil
 }
 func (s *RedisCache[T, I]) Delete(ids ...I) (int64, error) {
@@ -76,9 +92,10 @@ func (s *RedisCache[T, I]) Delete(ids ...I) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	for _, v := range objs {
-		err = s.ClearCache(v.GetID(), v.ListIndexes())
-	}
+	s.ClearCache(objs...)
+	// for _, v := range objs {
+	// 	err = s.ClearCache(v.GetID(), v.ListIndexes())
+	// }
 	return rowsAffected, err
 }
 func (s *RedisCache[T, I]) Save(obj *T) error {
@@ -95,8 +112,7 @@ func (s *RedisCache[T, I]) Save(obj *T) error {
 			return err
 		}
 	}
-
-	s.ClearCache((*obj).GetID(), (*obj).ListIndexes().Merge(old.ListIndexes()))
+	s.ClearCache(old, *obj)
 	return nil
 }
 
@@ -115,7 +131,8 @@ func (s *RedisCache[T, I]) Update(id I, values interface{}) (int64, error) {
 	}
 
 	obj, _, err := s.Get(id)
-	err = s.ClearCache(old.GetID(), old.ListIndexes().Merge(obj.ListIndexes()))
+	s.ClearCache(old, obj)
+	// err = s.ClearCache(old.GetID(), old.ListIndexes().Merge(obj.ListIndexes()))
 	return effectedRows, err
 }
 
