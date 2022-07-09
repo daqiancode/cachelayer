@@ -1,5 +1,5 @@
 # cachelayer
-A cache layer above the orm in golang
+A cache layer on top of ORM layer
 
 ## Idea
 ### 2 Types of Cache
@@ -17,6 +17,10 @@ A cache layer above the orm in golang
 ### Clear cache logic
 1. Get related objects,eg. update(id,v), related objs is old record and new record after updated,`[old,new]`
 2. Clear cache with id and index rediskey of related objs, `clearCache([old,new])`
+
+## Support
+1. Gorm, including MySQL, PostgreSQL, SQLite, SQL Server
+2. Mongo
 
 ## Example
 ```go
