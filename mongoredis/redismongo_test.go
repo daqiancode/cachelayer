@@ -57,18 +57,6 @@ func getMongoClient() *mongo.Client {
 
 func TestBasic(t *testing.T) {
 
-	// coll := client.Database("test").Collection("ratings")
-	// c := Commodity{
-	// 	Id:       "62c7d675b562f2ded137850f",
-	// 	Name:     "mobile1",
-	// 	Category: 1,
-	// 	Addr:     Addr{Country: "china", City: "jz"},
-	// }
-	// result, err := coll.InsertOne(context.TODO(), c)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Printf("%d documents inserted with IDs:\n", result.InsertedID)
 	client := getMongoClient()
 	rm := mongoredis.NewMongoRedis[Commodity, string]("mongo", "test", "c1", "Id", client, getRedisClient(), 100*time.Second)
 	defer rm.Close()

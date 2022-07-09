@@ -7,18 +7,6 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type DBCRUD[T Table[I], I IDType] interface {
-	Create(r *T) error
-	Save(r *T) error
-	Update(id I, values interface{}) (int64, error)
-	Delete(ids ...I) (int64, error)
-	Get(id I) (T, bool, error)
-	GetBy(index Index) (T, bool, error)
-	List(ids ...I) ([]T, error)
-	ListBy(index Index, orderBys OrderBys) ([]T, error)
-	Close() error
-}
-
 type RedisCache[T Table[I], I IDType] struct {
 	*CacheBase[T, I]
 	red    *RedisJson[T]
