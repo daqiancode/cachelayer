@@ -85,6 +85,12 @@ func TestGormRedisMain(t *testing.T) {
 	r3, err := ca.ListBy(cachelayer.NewIndex("category", 100), nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(r3))
+
+	r5, exists, err := ca.Get("1")
+	assert.Nil(t, err)
+	assert.True(t, exists)
+	assert.Equal(t, id, r5.Id)
+
 	r4, err := ca.List("1", "100")
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(r4))

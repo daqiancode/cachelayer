@@ -9,7 +9,7 @@ import (
 )
 
 func NewGormRedis[T cachelayer.Table[I], I cachelayer.IDType](prefix, table, idField string, db *gorm.DB, red *redis.Client, ttl time.Duration) *cachelayer.RedisCache[T, I] {
-	rc := cachelayer.NewRedisCache[T, I](prefix, table, idField, &Gorm[T, I]{db: db}, red, ttl)
+	rc := cachelayer.NewRedisCache[T, I](prefix, table, idField, &Gorm[T, I]{db: db, idField: idField}, red, ttl)
 	return rc
 }
 func NewGormRedisFull[T cachelayer.Table[I], I cachelayer.IDType](prefix, table, idField string, db *gorm.DB, red *redis.Client, ttl time.Duration) cachelayer.FullCache[T, I] {
@@ -18,7 +18,8 @@ func NewGormRedisFull[T cachelayer.Table[I], I cachelayer.IDType](prefix, table,
 }
 
 type Gorm[T cachelayer.Table[I], I cachelayer.IDType] struct {
-	db *gorm.DB
+	db      *gorm.DB
+	idField string
 }
 
 func (s *Gorm[T, I]) Close() error {
@@ -66,7 +67,7 @@ func (s *Gorm[T, I]) Delete(ids ...I) (int64, error) {
 }
 func (s *Gorm[T, I]) Get(id I) (T, bool, error) {
 	var r T
-	if err := s.db.First(&r, id).Error; err != nil {
+	if err := s.db.Where(map[string]interface{}{s.idField: id}).First(&r).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return r, false, nil
 		}
