@@ -1,6 +1,15 @@
 # cachelayer
 A cache layer on top of ORM layer
 
+## Installation
+```shell
+go get github.com/daqiancode/cachelayer
+#for gorm
+go get github.com/daqiancode/cachelayer/gormredis
+#for mongodb
+go get github.com/daqiancode/cachelayer/mongoredis
+```
+
 ## Idea
 ### 2 Types of Cache
 1. Partial cache: load record on demands
