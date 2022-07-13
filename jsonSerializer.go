@@ -235,7 +235,7 @@ func (s *RedisHashJson[T, I]) HMGetJson(key string, ids ...I) ([]T, error) {
 	return r, nil
 }
 
-func (s *RedisHashJson[T, I]) HSetJson(key string, objs []T) error {
+func (s *RedisHashJson[T, I]) HSetJson(key string, objs ...T) error {
 	if len(objs) == 0 {
 		return nil
 	}

@@ -40,14 +40,14 @@ func (s *FullRedisCache[T, I]) CacheKey() string {
 	return strings.ToLower(r)
 }
 
-func (s *FullRedisCache[T, I]) load() error {
+func (s *FullRedisCache[T, I]) Load() error {
 	r, err := s.db.ListAll()
 	if err != nil {
 		return err
 	}
 
 	key := s.CacheKey()
-	err = s.red.HSetJson(key, r)
+	err = s.red.HSetJson(key, r...)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (s *FullRedisCache[T, I]) Create(r *T) error {
 	if err := s.db.Create(r); err != nil {
 		return err
 	}
-	return s.load()
+	return s.red.HSetJson(s.CacheKey(), *r)
 }
 func (s *FullRedisCache[T, I]) Save(r *T) error {
 	_, exists, err := s.Get((*r).GetID())
@@ -103,8 +103,7 @@ func (s *FullRedisCache[T, I]) Save(r *T) error {
 			return err
 		}
 	}
-	s.load()
-	return nil
+	return s.red.HSetJson(s.CacheKey(), *r)
 }
 func (s *FullRedisCache[T, I]) Update(id I, values interface{}) (int64, error) {
 	if IsNullID(id) {
@@ -115,16 +114,15 @@ func (s *FullRedisCache[T, I]) Update(id I, values interface{}) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	s.load()
-
-	return effectedRows, err
+	r, _, err := s.db.Get(id)
+	return effectedRows, s.red.HSetJson(s.CacheKey(), r)
 }
 func (s *FullRedisCache[T, I]) Delete(ids ...I) (int64, error) {
 	rowsAffected, err := s.db.Delete(ids...)
 	if err != nil {
 		return 0, err
 	}
-	s.load()
+	s.red.HDelJson(s.CacheKey(), ids...)
 	return rowsAffected, err
 }
 
