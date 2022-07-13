@@ -63,7 +63,7 @@ func (s *FullRedisCache[T, I]) Get(id I) (T, bool, error) {
 	if exists {
 		return r, true, nil
 	}
-	if err := s.load(); err != nil {
+	if err := s.Load(); err != nil {
 		return r, false, err
 	}
 	return s.red.HGetJson(key, id)
@@ -76,7 +76,7 @@ func (s *FullRedisCache[T, I]) List(id ...I) ([]T, error) {
 		return nil, err
 	}
 	if count == 0 {
-		if err := s.load(); err != nil {
+		if err := s.Load(); err != nil {
 			return nil, err
 		}
 	}
@@ -133,7 +133,7 @@ func (s *FullRedisCache[T, I]) ListAll() ([]T, error) {
 		return nil, err
 	}
 	if count == 0 {
-		if err := s.load(); err != nil {
+		if err := s.Load(); err != nil {
 			return nil, err
 		}
 	}
