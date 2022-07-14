@@ -159,6 +159,7 @@ func (s *RedisJson[T]) MGetJson(keys []string) ([]T, []int, error) {
 }
 
 type RedisHashJson[T Table[I], I IDType] struct {
+	*RedisJson[T]
 	*redis.Client
 	serializer Serializer
 	ctx        context.Context
@@ -167,6 +168,7 @@ type RedisHashJson[T Table[I], I IDType] struct {
 
 func NewRedisHashJson[T Table[I], I IDType](client *redis.Client, ttl time.Duration) *RedisHashJson[T, I] {
 	return &RedisHashJson[T, I]{
+		RedisJson:  NewRedisJson[T](client, ttl),
 		Client:     client,
 		serializer: &JsonSerializer{},
 		ctx:        context.Background(),

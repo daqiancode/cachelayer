@@ -103,4 +103,8 @@ func TestCacheFull(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, exists)
 	fmt.Println(c)
+	fmt.Println(s.GetBy(cachelayer.NewIndex("Category", 1)))
+	fmt.Println(s.GetBy(cachelayer.NewIndex("category", 1)))
+	fmt.Println(s.GetBy(cachelayer.NewIndex("category", 2)))
+	fmt.Println(s.GetBy(cachelayer.NewIndex("category", 2)))
 }

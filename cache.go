@@ -157,6 +157,10 @@ type FullCache[T Table[I], I IDType] interface {
 	Get(id I) (T, bool, error)
 	//list objs by ids
 	List(ids ...I) ([]T, error)
+	//get obj by index
+	GetBy(index Index) (T, bool, error)
+	//list objs by indexes
+	ListBy(index Index, orderBys OrderBys) ([]T, error)
 	//list all objs from db
 	ListAll() ([]T, error)
 

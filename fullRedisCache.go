@@ -9,21 +9,24 @@ import (
 )
 
 type FullDBCache[T Table[I], I IDType] interface {
-	Create(r *T) error
-	Save(r *T) error
-	Update(id I, values interface{}) (int64, error)
-	Delete(ids ...I) (int64, error)
-	Get(id I) (T, bool, error)
-	List(ids ...I) ([]T, error)
+	DBCRUD[T, I]
+	// Create(r *T) error
+	// Save(r *T) error
+	// Update(id I, values interface{}) (int64, error)
+	// Delete(ids ...I) (int64, error)
+	// Get(id I) (T, bool, error)
+	// List(ids ...I) ([]T, error)
 	ListAll() ([]T, error)
-	Close() error
+	// Close() error
 }
 
 type FullRedisCache[T Table[I], I IDType] struct {
 	*CacheBase[T, I]
-	db  FullDBCache[T, I]
-	red *RedisHashJson[T, I]
-	ctx context.Context
+	db     FullDBCache[T, I]
+	red    *RedisHashJson[T, I]
+	ctx    context.Context
+	redId  *RedisJson[I]
+	redIds *RedisJson[[]I]
 }
 
 func NewFullRedisCache[T Table[I], I IDType](prefix, table, idField string, db FullDBCache[T, I], red *redis.Client, ttl time.Duration) *FullRedisCache[T, I] {
@@ -32,6 +35,8 @@ func NewFullRedisCache[T Table[I], I IDType](prefix, table, idField string, db F
 		db:        db,
 		red:       NewRedisHashJson[T, I](red, ttl),
 		ctx:       context.Background(),
+		redId:     NewRedisJson[I](red, ttl),
+		redIds:    NewRedisJson[[]I](red, ttl),
 	}
 }
 
@@ -142,4 +147,57 @@ func (s *FullRedisCache[T, I]) ListAll() ([]T, error) {
 
 func (s *FullRedisCache[T, I]) ClearCache(objs ...T) error {
 	return s.red.Del(s.ctx, s.CacheKey()).Err()
+}
+
+func (s *FullRedisCache[T, I]) GetBy(index Index) (T, bool, error) {
+	// fetch id from redis
+	redisKey := s.MakeCacheKey(index)
+	var r T
+	cachedId, exists, err := s.redId.GetJson(redisKey)
+	if err != nil && err != redis.Nil {
+		return r, false, err
+	}
+	if exists && IsNullID(cachedId) {
+		return r, false, nil
+	}
+	if exists {
+		return s.Get(cachedId)
+	}
+	// search from db
+	r, exists, err = s.db.GetBy(index)
+	if err != nil {
+		return r, false, err
+	}
+	if !exists {
+		err = s.red.SetNull(redisKey)
+		return r, exists, err
+	}
+	// set id to redis
+	err = s.redId.SetJson(redisKey, r.GetID())
+	return r, true, err
+}
+
+func (s *FullRedisCache[T, I]) ListBy(index Index, orderBys OrderBys) ([]T, error) {
+	// fetch ids from redis
+	redisKey := s.MakeCacheKey(index)
+	var r []T
+	cachedIds, exists, err := s.redIds.GetJson(redisKey)
+	if err != nil && err != redis.Nil {
+		return nil, err
+	}
+	if exists {
+		return s.List(cachedIds...)
+	}
+	// search from db
+	r, err = s.db.ListBy(index, orderBys)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]I, len(r))
+	for i, v := range r {
+		ids[i] = v.GetID()
+	}
+	// set ids to redis
+	err = s.redIds.SetJson(redisKey, ids)
+	return r, err
 }
