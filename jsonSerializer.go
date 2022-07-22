@@ -2,7 +2,6 @@ package cachelayer
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/daqiancode/jsoniter"
@@ -128,7 +127,6 @@ func (s *RedisJson[T]) MGetJson(keys []string) ([]T, []int, error) {
 		return nil, nil, nil
 	}
 	vs, err := s.MGet(s.ctx, keys...).Result()
-	fmt.Printf("MGetJson: %#v\n", vs)
 	if err != nil {
 		return nil, nil, err
 	}
