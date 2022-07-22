@@ -122,6 +122,9 @@ func (s *FullRedisCache[T, I]) Update(id I, values interface{}) (int64, error) {
 		return 0, err
 	}
 	r, _, err := s.db.Get(id)
+	if err != nil {
+		return 0, err
+	}
 	return effectedRows, s.red.HSetJson(s.CacheKey(), r)
 }
 func (s *FullRedisCache[T, I]) Delete(ids ...I) (int64, error) {
