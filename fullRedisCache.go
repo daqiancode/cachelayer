@@ -71,6 +71,7 @@ func (s *FullRedisCache[T, I]) Get(id I) (T, bool, error) {
 	if err := s.Load(); err != nil {
 		return r, false, err
 	}
+	s.red.Expires(key)
 	return s.red.HGetJson(key, id)
 }
 
@@ -85,6 +86,7 @@ func (s *FullRedisCache[T, I]) List(id ...I) ([]T, error) {
 			return nil, err
 		}
 	}
+	s.red.Expires(key)
 	return s.red.HMGetJson(key, id...)
 }
 
@@ -142,6 +144,7 @@ func (s *FullRedisCache[T, I]) ListAll() ([]T, error) {
 			return nil, err
 		}
 	}
+	s.red.Expires(key)
 	return s.red.HGetAllJson(key)
 }
 
@@ -161,6 +164,7 @@ func (s *FullRedisCache[T, I]) GetBy(index Index) (T, bool, error) {
 		return r, false, nil
 	}
 	if exists {
+		s.red.Expires(redisKey)
 		return s.Get(cachedId)
 	}
 	// search from db
@@ -186,6 +190,7 @@ func (s *FullRedisCache[T, I]) ListBy(index Index, orderBys OrderBys) ([]T, erro
 		return nil, err
 	}
 	if exists {
+		s.red.Expires(redisKey)
 		return s.List(cachedIds...)
 	}
 	// search from db

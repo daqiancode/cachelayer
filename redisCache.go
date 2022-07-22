@@ -131,6 +131,7 @@ func (s *RedisCache[T, I]) Get(id I) (T, bool, error) {
 		return r, false, err
 	}
 	if exists {
+		s.red.Expires(redisKey)
 		return r, true, nil
 	}
 	r, exists, err = s.db.Get(id)
@@ -157,6 +158,7 @@ func (s *RedisCache[T, I]) List(ids ...I) ([]T, error) {
 		return nil, err
 	}
 	if len(missedIndexes) == 0 {
+		s.red.Expires(redisKeys...)
 		return cachedRecords, err
 	}
 	cachedIdIndexMap := make(map[I]bool, len(cachedRecords))
@@ -223,6 +225,7 @@ func (s *RedisCache[T, I]) GetBy(index Index) (T, bool, error) {
 		return r, false, nil
 	}
 	if exists {
+		s.red.Expires(redisKey)
 		return s.Get(cachedId)
 	}
 	// search from db
@@ -247,6 +250,7 @@ func (s *RedisCache[T, I]) ListBy(index Index, orderBys OrderBys) ([]T, error) {
 		return nil, err
 	}
 	if exists {
+		s.red.Expires(redisKey)
 		return s.List(cachedIds...)
 	}
 	// search from db
