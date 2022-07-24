@@ -32,6 +32,7 @@ func GetDBClient() *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
+	db.Migrator().AutoMigrate(&Commodity{})
 	return db
 }
 
@@ -42,16 +43,16 @@ func getRedisClient() *redis.Client {
 }
 
 type Commodity struct {
-	Id       string
-	Name     string
-	Category int
+	Id         string
+	Name       string
+	CategoryId int
 }
 
 func (s Commodity) GetID() string {
 	return s.Id
 }
 func (s Commodity) ListIndexes() cachelayer.Indexes {
-	return cachelayer.Indexes{}.Add(cachelayer.Index{}.Add("Category", s.Category))
+	return cachelayer.Indexes{}.Add(cachelayer.Index{}.Add("CategoryId", s.CategoryId))
 }
 func createCache() cachelayer.Cache[Commodity, string] {
 	return gormredis.NewGormRedis[Commodity, string]("app", "commodity", "Id", GetDBClient(), getRedisClient(), 10*time.Second)
@@ -60,6 +61,16 @@ func createCache() cachelayer.Cache[Commodity, string] {
 func createCacheFull() cachelayer.FullCache[Commodity, string] {
 	return gormredis.NewGormRedisFull[Commodity, string]("app", "commodity", "Id", GetDBClient(), getRedisClient(), 10*time.Second)
 
+}
+
+func TestGorm(t *testing.T) {
+	db := GetDBClient()
+	table := db.NamingStrategy.TableName("ProductDetail")
+	fmt.Println(table)
+	field := db.NamingStrategy.ColumnName("ProductDetail", "ProductId")
+	fmt.Println(field)
+	field1 := db.NamingStrategy.ColumnName("ProductDetail", "product_id")
+	fmt.Println(field1)
 }
 func TestGormRedisMain(t *testing.T) {
 	id := "1"
@@ -71,18 +82,18 @@ func TestGormRedisMain(t *testing.T) {
 	fmt.Println(exists)
 	assert.False(t, exists)
 	assert.Equal(t, c.Id, "")
-	d := Commodity{Id: id, Name: "tom", Category: 1}
+	d := Commodity{Id: id, Name: "tom", CategoryId: 1}
 	err = ca.Create(&d)
 	assert.Nil(t, err)
-	r1, exists, err := ca.GetBy(cachelayer.NewIndex("category", 1))
+	r1, exists, err := ca.GetBy(cachelayer.NewIndex("CategoryId", 1))
 	assert.Nil(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, id, r1.Id)
-	r2, exists, err := ca.GetBy(cachelayer.NewIndex("category", 100))
+	r2, exists, err := ca.GetBy(cachelayer.NewIndex("CategoryId", 100))
 	assert.Nil(t, err)
 	assert.False(t, exists)
 	assert.Equal(t, "", r2.Id)
-	r3, err := ca.ListBy(cachelayer.NewIndex("category", 100), nil)
+	r3, err := ca.ListBy(cachelayer.NewIndex("CategoryId", 100), nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(r3))
 
@@ -103,8 +114,8 @@ func TestCacheFull(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, exists)
 	fmt.Println(c)
-	fmt.Println(s.GetBy(cachelayer.NewIndex("Category", 1)))
-	fmt.Println(s.GetBy(cachelayer.NewIndex("category", 1)))
-	fmt.Println(s.GetBy(cachelayer.NewIndex("category", 2)))
-	fmt.Println(s.GetBy(cachelayer.NewIndex("category", 2)))
+	fmt.Println(s.GetBy(cachelayer.NewIndex("CategoryId", 1)))
+	fmt.Println(s.GetBy(cachelayer.NewIndex("CategoryId", 1)))
+	fmt.Println(s.GetBy(cachelayer.NewIndex("CategoryId", 2)))
+	fmt.Println(s.GetBy(cachelayer.NewIndex("CategoryId", 2)))
 }

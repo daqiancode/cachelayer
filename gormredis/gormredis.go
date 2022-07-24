@@ -9,16 +9,17 @@ import (
 )
 
 func NewGormRedis[T cachelayer.Table[I], I cachelayer.IDType](prefix, table, idField string, db *gorm.DB, red *redis.Client, ttl time.Duration) *cachelayer.RedisCache[T, I] {
-	rc := cachelayer.NewRedisCache[T, I](prefix, table, idField, &Gorm[T, I]{db: db, idField: idField}, red, ttl)
+	rc := cachelayer.NewRedisCache[T, I](prefix, table, idField, &Gorm[T, I]{db: db, table: table, idField: idField}, red, ttl)
 	return rc
 }
 func NewGormRedisFull[T cachelayer.Table[I], I cachelayer.IDType](prefix, table, idField string, db *gorm.DB, red *redis.Client, ttl time.Duration) cachelayer.FullCache[T, I] {
-	rc := cachelayer.NewFullRedisCache[T, I](prefix, table, idField, &Gorm[T, I]{db: db}, red, ttl)
+	rc := cachelayer.NewFullRedisCache[T, I](prefix, table, idField, &Gorm[T, I]{db: db, table: table, idField: idField}, red, ttl)
 	return rc
 }
 
 type Gorm[T cachelayer.Table[I], I cachelayer.IDType] struct {
 	db      *gorm.DB
+	table   string
 	idField string
 }
 
@@ -26,7 +27,7 @@ func (s *Gorm[T, I]) Close() error {
 	return nil
 }
 func (s *Gorm[T, I]) DB() *gorm.DB {
-	return s.DB()
+	return s.db
 }
 func (s *Gorm[T, I]) Create(r *T) error {
 	if err := s.db.Create(r).Error; err != nil {
@@ -77,7 +78,11 @@ func (s *Gorm[T, I]) Get(id I) (T, bool, error) {
 }
 func (s *Gorm[T, I]) GetBy(index cachelayer.Index) (T, bool, error) {
 	var r T
-	if err := s.db.Where(map[string]interface{}(index)).First(&r).Error; err != nil {
+	index1 := make(cachelayer.Index, len(index))
+	for k, v := range index {
+		index1[s.db.NamingStrategy.ColumnName(s.table, k)] = v
+	}
+	if err := s.db.Where(map[string]interface{}(index1)).First(&r).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return r, false, nil
 		}
@@ -92,7 +97,15 @@ func (s *Gorm[T, I]) List(ids ...I) ([]T, error) {
 }
 func (s *Gorm[T, I]) ListBy(index cachelayer.Index, orderBys cachelayer.OrderBys) ([]T, error) {
 	var r []T
-	if err := s.db.Where(map[string]interface{}(index)).Order(orderBys.String()).Find(&r).Error; err != nil {
+	index1 := make(cachelayer.Index, len(index))
+	for k, v := range index {
+		index1[s.db.NamingStrategy.ColumnName(s.table, k)] = v
+	}
+	for i, v := range orderBys {
+		orderBys[i].Field = s.db.NamingStrategy.ColumnName(s.table, v.Field)
+	}
+
+	if err := s.db.Where(map[string]interface{}(index1)).Order(orderBys.String()).Find(&r).Error; err != nil {
 		return nil, err
 	}
 	return r, nil
